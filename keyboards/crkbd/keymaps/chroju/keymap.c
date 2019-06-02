@@ -30,21 +30,117 @@ enum custom_keycodes {
   QWERTY = SAFE_RANGE,
   LOWER,
   RAISE,
-  ADJUST,
-  BACKLIT,
   RGBRST
 };
 
-enum macro_keycodes {
-  KC_SAMPLEMACRO,
+enum {
+  TD_CTL_GUI = 0,
+  TD_LCBRS,
+  TD_RCBRS,
+  TD_LANG
 };
 
 enum {
-  TD_CTL_GUI = 0
+  SINGLE_TAP = 1,
+  SINGLE_HOLD = 2,
+  DOUBLE_TAP = 3,
+};
+
+typedef struct {
+  bool is_press_action;
+  int state;
+} tap;
+
+int lang_dance (qk_tap_dance_state_t *state) {
+  if (state->count == 1) {
+    if (!state->pressed) return SINGLE_TAP;
+    else return SINGLE_HOLD;
+  }
+  else if (state->count == 2) {
+    return DOUBLE_TAP;
+  }
+  else return 6; //magic number. At some point this method will expand to work for more presses
+}
+
+//instanalize an instance of 'tap' for the 'x' tap dance.
+static tap xtap_state = {
+  .is_press_action = true,
+  .state = 0
+};
+
+void x_finished_1 (qk_tap_dance_state_t *state, void *user_data) {
+  xtap_state.state = lang_dance(state);
+  switch (xtap_state.state) {
+    case SINGLE_TAP:                     // 単押しで「英数」と「無変換」　Lowerレイヤーがトグルされている場合はレイヤーをオフにする
+        register_code(KC_MHEN);
+        register_code(KC_LANG2);
+        break;
+    case SINGLE_HOLD:                   // 長押しでLowerレイヤーをオンにする
+        layer_on(_RAISE);
+        break;
+    case DOUBLE_TAP:                    // ダブルタップでLowerレイヤーをトグル
+        register_code(KC_HENK);
+        register_code(KC_LANG1);
+        break;
+  }
+}
+
+void x_reset_1 (qk_tap_dance_state_t *state, void *user_data) {
+  switch (xtap_state.state) {
+    case SINGLE_TAP:  
+        unregister_code(KC_LANG2);
+        unregister_code(KC_MHEN); 
+        break;
+    case SINGLE_HOLD: 
+        layer_off(_RAISE);
+        break;
+    case DOUBLE_TAP:
+        unregister_code(KC_HENK);
+        unregister_code(KC_LANG1);
+        break;
+  }
+  xtap_state.state = 0;
+}
+
+void dance_left_brackets (qk_tap_dance_state_t *state, void *user_data) {
+  if (state->count == 1) {
+    register_code (KC_LBRC);
+    unregister_code (KC_LBRC);
+  } else if (state->count == 2) {
+    register_code (KC_LSFT);
+    register_code (KC_9);
+    unregister_code (KC_9);
+    unregister_code (KC_LSFT);
+  } else if (state->count == 3) {
+    register_code (KC_LSFT);
+    register_code (KC_LBRC);
+    unregister_code (KC_LBRC);
+    unregister_code (KC_LSFT);
+  }
+};
+
+void dance_right_brackets (qk_tap_dance_state_t *state, void *user_data) {
+  if (state->count == 1) {
+    register_code (KC_RBRC);
+    unregister_code (KC_RBRC);
+  } else if (state->count == 2) {
+    register_code (KC_LSFT);
+    register_code (KC_0);
+    unregister_code (KC_0);
+    unregister_code (KC_LSFT);
+  } else if (state->count == 3) {
+    register_code (KC_RSFT);
+    register_code (KC_RBRC);
+    unregister_code (KC_RBRC);
+    unregister_code (KC_RSFT);
+  }
 };
 
 qk_tap_dance_action_t tap_dance_actions[] = {
-  [TD_CTL_GUI] = ACTION_TAP_DANCE_DOUBLE(KC_LCTRL, KC_LGUI)
+  [TD_CTL_GUI] = ACTION_TAP_DANCE_DOUBLE(KC_LCTRL, KC_LGUI),
+  [TD_LCBRS] = ACTION_TAP_DANCE_FN(dance_left_brackets),
+  [TD_RCBRS] = ACTION_TAP_DANCE_FN(dance_right_brackets),
+  [TD_LANG]  = ACTION_TAP_DANCE_FN_ADVANCED(NULL, x_finished_1, x_reset_1)
 };
 
 #define KC______ KC_TRNS
@@ -61,58 +157,49 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 #define KC_LVAI  RGB_VAI
 #define KC_LVAD  RGB_VAD
 #define KC_LMOD  RGB_MOD
-#define KC_LOWKN LT(1, KC_LANG1)
-#define KC_RASEI LT(2, KC_LANG2)
 #define KC_CAD   LCTL(LALT(KC_DEL))
 #define KC_SFTESC LSFT_T(KC_ESC)
+#define KC_LOWESC LT(1, KC_ESC)
+#define KC_RASLNG TD(TD_LANG)
 #define KC_CTLGUI TD(TD_CTL_GUI)
+#define KC_SPCALT LALT_T(KC_SPACE)
+#define KC_LCBRS TD(TD_LCBRS)
+#define KC_RCBRS TD(TD_RCBRS)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [_QWERTY] = LAYOUT_kc( \
   //,-----------------------------------------.                ,-----------------------------------------.
-        TAB,     Q,     W,     E,     R,     T,                      Y,     U,     I,     O,     P,  BSPC,\
+        TAB,     Q,     W,     E,     R,     T,                      Y,     U,     I,     O,     P,  BSLS,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
      CTLGUI,     A,     S,     D,     F,     G,                      H,     J,     K,     L,  SCLN,  QUOT,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
      SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  RALT,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWKN,   SPC,      ENT, RASEI,  BSPC \
+                                   LGUI,LOWESC,SPCALT,      ENT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   ),
 
   [_RAISE] = LAYOUT_kc( \
   //,-----------------------------------------.                ,-----------------------------------------.
-       LRST,     1,     2,     3,     4,     5,                      6,     7,     8,     9,     0, XXXXX,\
+       LRST,    F1,    F2,    F3,    F4,    F5,                     F6,    F7,    F8,    F9,   F10,   F12,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LTOG,  LHUI,  LSAI,  LVAI,  VOLD,  VOLU,                   LEFT,  DOWN,    UP, RIGHT,  BRID,  BRIU,\
+       LTOG,  LHUI,  LSAI,  LVAI, XXXXX, XXXXX,                   LEFT,  DOWN,    UP, RIGHT,  VOLU,  BRIU,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LMOD,  LHUD,  LSAD,  LVAD,  MUTE,    F5,                     F6,    F7,    F8,    F9,   F10,   F12,\
+       LMOD,  LHUD,  LSAD,  LVAD, XXXXX, XXXXX,                  XXXXX, XXXXX, XXXXX,  MUTE,  VOLD,  BRID,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWKN,   SPC,      ENT, RASEI,   CAD \
+                                   LGUI,LOWESC,SPCALT,      ENT,RASLNG,   CAD \
                               //`--------------------'  `--------------------'
   ),
 
   [_LOWER] = LAYOUT_kc( \
   //,-----------------------------------------.                ,-----------------------------------------.
-       TILD,  EXLM,    AT,  HASH,   DLR,  PERC,                   CIRC,  AMPR,  ASTR,  MINS,   EQL,  BSPC,\
+       EXLM,     1,     2,     3,     4,     5,                      6,     7,     8,     9,     0, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-        GRV, XXXXX, XXXXX, XXXXX,  LCBR,  LBRC,                   RBRC,  RCBR, XXXXX,  UNDS,  PLUS,  PIPE,\
+       TILD, XXXXX, XXXXX, XXXXX, XXXXX, LCBRS,                  RCBRS,  MINS,   EQL, XXXXX, XXXXX, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LSFT, XXXXX, XXXXX, XXXXX, XXXXX,  LPRN,                   RPRN, XXXXX, XXXXX, XXXXX, XXXXX,  BSLS,\
+        GRV,    AT,  HASH,   DLR,  PERC, XXXXX,                   ASTR,  UNDS,  PLUS,  CIRC,  AMPR,  ASTR,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWKN,   SPC,      ENT, RASEI,  BSPC \
-                              //`--------------------'  `--------------------'
-  ),
-
-  [_ADJUST] = LAYOUT_kc( \
-  //,-----------------------------------------.                ,-----------------------------------------.
-        RST,  LRST, XXXXX, XXXXX, XXXXX, XXXXX,                  XXXXX, XXXXX, XXXXX, XXXXX, XXXXX, XXXXX,\
-  //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LTOG,  LHUI,  LSAI,  LVAI, XXXXX, XXXXX,                   BRID,  BRIU, XXXXX, XXXXX, XXXXX, XXXXX,\
-  //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LMOD,  LHUD,  LSAD,  LVAD, XXXXX, XXXXX,                   VOLD,  VOLU,  MUTE, XXXXX, XXXXX, XXXXX,\
-  //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWKN,   SPC,      ENT, RASEI,  BSPC \
+                                   LGUI,LOWESC,SPCALT,      ENT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   )
 };
@@ -125,13 +212,13 @@ void persistent_default_layer_set(uint16_t default_layer) {
 }
 
 // Setting ADJUST layer RGB back to default
-void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
-  if (IS_LAYER_ON(layer1) && IS_LAYER_ON(layer2)) {
-    layer_on(layer3);
-  } else {
-    layer_off(layer3);
-  }
-}
+/* void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) { */
+/*   if (IS_LAYER_ON(layer1) && IS_LAYER_ON(layer2)) { */
+/*     layer_on(layer3); */
+/*   } else { */
+/*     layer_off(layer3); */
+/*   } */
+/* } */
 
 void matrix_init_user(void) {
     #ifdef RGBLIGHT_ENABLE
@@ -149,16 +236,8 @@ void matrix_init_user(void) {
 // When add source files to SRC in rules.mk, you can use functions.
 const char *read_layer_state(void);
 const char *read_logo(void);
-/* void set_keylog(uint16_t keycode, keyrecord_t *record); */
-/* const char *read_keylog(void); */
-/* const char *read_keylogs(void); */
 void set_uptime(void);
 const char *read_uptime(void);
-
-// const char *read_mode_icon(bool swap);
-// const char *read_host_led_state(void);
-// void set_timelog(void);
-// const char *read_timelog(void);
 
 void matrix_scan_user(void) {
    iota_gfx_task();
@@ -166,14 +245,8 @@ void matrix_scan_user(void) {
 
 void matrix_render_user(struct CharacterMatrix *matrix) {
   if (is_master) {
-    // If you want to change the display of OLED, you need to change here
     matrix_write_ln(matrix, read_layer_state());
-    /* matrix_write_ln(matrix, read_keylog()); */
-    /* matrix_write_ln(matrix, read_keylogs()); */
     matrix_write_ln(matrix, read_uptime());
-    //matrix_write_ln(matrix, read_mode_icon(keymap_config.swap_lalt_lgui));
-    //matrix_write_ln(matrix, read_host_led_state());
-    //matrix_write_ln(matrix, read_timelog());
   } else {
     matrix_write(matrix, read_logo());
   }
@@ -212,31 +285,23 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case LOWER:
       if (record->event.pressed) {
         layer_on(_LOWER);
-        update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST);
+        /* update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST); */
       } else {
         layer_off(_LOWER);
-        update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST);
+        /* update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST); */
       }
       return false;
       break;
     case RAISE:
       if (record->event.pressed) {
         layer_on(_RAISE);
-        update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST);
+        /* update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST); */
       } else {
         layer_off(_RAISE);
-        update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST);
+        /* update_tri_layer_RGB(_LOWER, _RAISE, _ADJUST); */
       }
       return false;
       break;
-    case ADJUST:
-        if (record->event.pressed) {
-          layer_on(_ADJUST);
-        } else {
-          layer_off(_ADJUST);
-        }
-        return false;
-        break;
     case RGB_MOD:
       #ifdef RGBLIGHT_ENABLE
         if (record->event.pressed) {

@@ -72,14 +72,14 @@ void x_finished_1 (qk_tap_dance_state_t *state, void *user_data) {
   xtap_state.state = lang_dance(state);
   switch (xtap_state.state) {
     case SINGLE_TAP:                     // 単押しで「英数」と「無変換」　Lowerレイヤーがトグルされている場合はレイヤーをオフにする
-        register_code(KC_MHEN);
+        register_code(KC_F13);
         register_code(KC_LANG2);
         break;
     case SINGLE_HOLD:                   // 長押しでLowerレイヤーをオンにする
         layer_on(_RAISE);
         break;
     case DOUBLE_TAP:                    // ダブルタップでLowerレイヤーをトグル
-        register_code(KC_HENK);
+        register_code(KC_F16);
         register_code(KC_LANG1);
         break;
   }
@@ -88,14 +88,14 @@ void x_finished_1 (qk_tap_dance_state_t *state, void *user_data) {
 void x_reset_1 (qk_tap_dance_state_t *state, void *user_data) {
   switch (xtap_state.state) {
     case SINGLE_TAP:  
+        unregister_code(KC_F13); 
         unregister_code(KC_LANG2);
-        unregister_code(KC_MHEN); 
         break;
     case SINGLE_HOLD: 
         layer_off(_RAISE);
         break;
     case DOUBLE_TAP:
-        unregister_code(KC_HENK);
+        unregister_code(KC_F16);
         unregister_code(KC_LANG1);
         break;
   }
@@ -159,10 +159,9 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 #define KC_LMOD  RGB_MOD
 #define KC_CAD   LCTL(LALT(KC_DEL))
 #define KC_SFTESC LSFT_T(KC_ESC)
-#define KC_LOWESC LT(1, KC_ESC)
 #define KC_RASLNG TD(TD_LANG)
-#define KC_CTLGUI TD(TD_CTL_GUI)
-#define KC_SPCALT LALT_T(KC_SPACE)
+#define KC_ENTSFT LSFT_T(KC_ENTER)
+#define KC_ALTBSP LALT_T(KC_BSPC)
 #define KC_LCBRS TD(TD_LCBRS)
 #define KC_RCBRS TD(TD_RCBRS)
 
@@ -171,11 +170,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------.                ,-----------------------------------------.
         TAB,     Q,     W,     E,     R,     T,                      Y,     U,     I,     O,     P,  BSLS,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-     CTLGUI,     A,     S,     D,     F,     G,                      H,     J,     K,     L,  SCLN,  QUOT,\
+       LCTL,     A,     S,     D,     F,     G,                      H,     J,     K,     L,  SCLN,  QUOT,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
      SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  RALT,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI,LOWESC,SPCALT,      ENT,RASLNG,  BSPC \
+                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,ALTBSP \
                               //`--------------------'  `--------------------'
   ),
 
@@ -187,7 +186,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
        LMOD,  LHUD,  LSAD,  LVAD, XXXXX, XXXXX,                  XXXXX, XXXXX, XXXXX,  MUTE,  VOLD,  BRID,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI,LOWESC,SPCALT,      ENT,RASLNG,   CAD \
+                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,ALTBSP \
                               //`--------------------'  `--------------------'
   ),
 
@@ -195,11 +194,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------.                ,-----------------------------------------.
        EXLM,     1,     2,     3,     4,     5,                      6,     7,     8,     9,     0, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       TILD, XXXXX, XXXXX, XXXXX, XXXXX, LCBRS,                  RCBRS,  MINS,   EQL, XXXXX, XXXXX, XXXXX,\
+       TILD,    AT,  HASH,   DLR,  PERC, LCBRS,                  RCBRS,  MINS,   EQL,  CIRC,  AMPR, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-        GRV,    AT,  HASH,   DLR,  PERC, XXXXX,                   ASTR,  UNDS,  PLUS,  CIRC,  AMPR,  ASTR,\
+        GRV, XXXXX, XXXXX, XXXXX, XXXXX, XXXXX,                   ASTR,  UNDS,  PLUS, XXXXX, XXXXX, XXXXX,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI,LOWESC,SPCALT,      ENT,RASLNG,  BSPC \
+                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,ALTBSP \
                               //`--------------------'  `--------------------'
   )
 };

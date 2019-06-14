@@ -161,7 +161,7 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 #define KC_SFTESC LSFT_T(KC_ESC)
 #define KC_RASLNG TD(TD_LANG)
 #define KC_ENTSFT LSFT_T(KC_ENTER)
-#define KC_ALTBSP LALT_T(KC_BSPC)
+#define KC_ENTALT LALT_T(KC_ENTER)
 #define KC_LCBRS TD(TD_LCBRS)
 #define KC_RCBRS TD(TD_RCBRS)
 
@@ -174,7 +174,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
      SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  RALT,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,ALTBSP \
+                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   ),
 
@@ -186,7 +186,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
        LMOD,  LHUD,  LSAD,  LVAD, XXXXX, XXXXX,                  XXXXX, XXXXX, XXXXX,  MUTE,  VOLD,  BRID,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,ALTBSP \
+                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   ),
 
@@ -198,7 +198,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
         GRV, XXXXX, XXXXX, XXXXX, XXXXX, XXXXX,                   ASTR,  UNDS,  PLUS, XXXXX, XXXXX, XXXXX,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,ALTBSP \
+                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   )
 };

@@ -72,14 +72,14 @@ void x_finished_1 (qk_tap_dance_state_t *state, void *user_data) {
   xtap_state.state = lang_dance(state);
   switch (xtap_state.state) {
     case SINGLE_TAP:                     // 単押しで「英数」と「無変換」　Lowerレイヤーがトグルされている場合はレイヤーをオフにする
-        register_code(KC_F13);
+        register_code(KC_F21);
         register_code(KC_LANG2);
         break;
     case SINGLE_HOLD:                   // 長押しでLowerレイヤーをオンにする
         layer_on(_RAISE);
         break;
     case DOUBLE_TAP:                    // ダブルタップでLowerレイヤーをトグル
-        register_code(KC_F16);
+        register_code(KC_F22);
         register_code(KC_LANG1);
         break;
   }
@@ -161,7 +161,7 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 #define KC_SFTESC LSFT_T(KC_ESC)
 #define KC_RASLNG TD(TD_LANG)
 #define KC_ENTSFT LSFT_T(KC_ENTER)
-#define KC_ENTALT LALT_T(KC_ENTER)
+#define KC_SPCALT LALT_T(KC_SPACE)
 #define KC_LCBRS TD(TD_LCBRS)
 #define KC_RCBRS TD(TD_RCBRS)
 
@@ -174,7 +174,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
      SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  RALT,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,  BSPC \
+                                   LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   ),
 
@@ -186,7 +186,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
        LMOD,  LHUD,  LSAD,  LVAD, XXXXX, XXXXX,                  XXXXX, XXXXX, XXXXX,  MUTE,  VOLD,  BRID,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,  BSPC \
+                                   LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   ),
 
@@ -198,7 +198,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
         GRV, XXXXX, XXXXX, XXXXX, XXXXX, XXXXX,                   ASTR,  UNDS,  PLUS, XXXXX, XXXXX, XXXXX,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER, SPACE,   ENTSFT,RASLNG,  BSPC \
+                                   LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   )
 };

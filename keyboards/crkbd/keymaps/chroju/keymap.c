@@ -88,14 +88,14 @@ void x_finished_1 (qk_tap_dance_state_t *state, void *user_data) {
 void x_reset_1 (qk_tap_dance_state_t *state, void *user_data) {
   switch (xtap_state.state) {
     case SINGLE_TAP:  
-        unregister_code(KC_F13); 
+        unregister_code(KC_F21); 
         unregister_code(KC_LANG2);
         break;
     case SINGLE_HOLD: 
         layer_off(_RAISE);
         break;
     case DOUBLE_TAP:
-        unregister_code(KC_F16);
+        unregister_code(KC_F22);
         unregister_code(KC_LANG1);
         break;
   }
@@ -194,9 +194,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------.                ,-----------------------------------------.
        EXLM,     1,     2,     3,     4,     5,                      6,     7,     8,     9,     0, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       TILD,    AT,  HASH,   DLR,  PERC, LCBRS,                  RCBRS,  MINS,   EQL,  CIRC,  AMPR, XXXXX,\
+       TILD,    AT,  HASH,   DLR,  PERC, LCBRS,                  RCBRS,  MINS,   EQL,  ASTR, XXXXX, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-        GRV, XXXXX, XXXXX, XXXXX, XXXXX, XXXXX,                   ASTR,  UNDS,  PLUS, XXXXX, XXXXX, XXXXX,\
+        GRV, XXXXX, XXXXX,  CIRC,  AMPR,  LCBR,                   RCBR,  UNDS,  PLUS, XXXXX, XXXXX, XXXXX,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
                                    LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'

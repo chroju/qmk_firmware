@@ -87,11 +87,11 @@ void x_finished_1 (qk_tap_dance_state_t *state, void *user_data) {
 
 void x_reset_1 (qk_tap_dance_state_t *state, void *user_data) {
   switch (xtap_state.state) {
-    case SINGLE_TAP:  
-        unregister_code(KC_F21); 
+    case SINGLE_TAP:
+        unregister_code(KC_F21);
         unregister_code(KC_LANG2);
         break;
-    case SINGLE_HOLD: 
+    case SINGLE_HOLD:
         layer_off(_RAISE);
         break;
     case DOUBLE_TAP:
@@ -157,7 +157,10 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 #define KC_LVAI  RGB_VAI
 #define KC_LVAD  RGB_VAD
 #define KC_LMOD  RGB_MOD
+#define KC_SWAP  LCG_SWP
+#define KC_NRML  LCG_NRM
 #define KC_CAD   LCTL(LALT(KC_DEL))
+#define KC_EMJI  LGUI(LCTL(KC_SPACE))
 #define KC_SFTESC LSFT_T(KC_ESC)
 #define KC_RASLNG TD(TD_LANG)
 #define KC_ENTSFT LSFT_T(KC_ENTER)
@@ -172,7 +175,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
        LCTL,     A,     S,     D,     F,     G,                      H,     J,     K,     L,  SCLN,  QUOT,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-     SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  RALT,\
+     SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  EMJI,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
                                    LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
@@ -182,9 +185,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------.                ,-----------------------------------------.
        LRST,    F1,    F2,    F3,    F4,    F5,                     F6,    F7,    F8,    F9,   F10,   F12,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LTOG,  LHUI,  LSAI,  LVAI, XXXXX, XXXXX,                   LEFT,  DOWN,    UP, RIGHT,  VOLU,  BRIU,\
+       LTOG,  LHUI,  LSAI,  LVAI, XXXXX,  SWAP,                   LEFT,  DOWN,    UP, RIGHT,  VOLU,  BRIU,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LMOD,  LHUD,  LSAD,  LVAD, XXXXX, XXXXX,                  XXXXX, XXXXX, XXXXX,  MUTE,  VOLD,  BRID,\
+       LMOD,  LHUD,  LSAD,  LVAD, XXXXX,  NRML,                  XXXXX, XXXXX, XXXXX,  MUTE,  VOLD,  BRID,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
                                    LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
@@ -234,6 +237,7 @@ void matrix_init_user(void) {
 
 // When add source files to SRC in rules.mk, you can use functions.
 const char *read_layer_state(void);
+const char *read_bootmagic_state(void);
 const char *read_logo(void);
 void set_uptime(void);
 const char *read_uptime(void);
@@ -245,6 +249,7 @@ void matrix_scan_user(void) {
 void matrix_render_user(struct CharacterMatrix *matrix) {
   if (is_master) {
     matrix_write_ln(matrix, read_layer_state());
+    matrix_write_ln(matrix, read_bootmagic_state());
     matrix_write_ln(matrix, read_uptime());
   } else {
     matrix_write(matrix, read_logo());

@@ -237,7 +237,7 @@ void matrix_init_user(void) {
 
 // When add source files to SRC in rules.mk, you can use functions.
 const char *read_layer_state(void);
-const char *read_bootmagic_state(void);
+const char *read_bootmagic_state(bool swap);
 const char *read_logo(void);
 void set_uptime(void);
 const char *read_uptime(void);
@@ -248,9 +248,9 @@ void matrix_scan_user(void) {
 
 void matrix_render_user(struct CharacterMatrix *matrix) {
   if (is_master) {
+    matrix_write_ln(matrix, read_bootmagic_state(keymap_config.swap_lctl_lgui));
     matrix_write_ln(matrix, read_layer_state());
-    matrix_write_ln(matrix, read_bootmagic_state());
-    matrix_write_ln(matrix, read_uptime());
+    matrix_write(matrix, read_uptime());
   } else {
     matrix_write(matrix, read_logo());
   }

@@ -3,15 +3,16 @@
 #include <stdio.h>
 #include "crkbd.h"
 
-char                   bootmagic_state_str[24];
+char mode_icon[24];
 extern keymap_config_t keymap_config;
 
-const char *read_bootmagic_state(void) {
-  if (keymap_config.swap_lalt_lgui) {
-    snprintf(bootmagic_state_str, sizeof(bootmagic_state_str), "Mode: Win");
+const char *read_bootmagic_state(bool swap) {
+  static char logo[][2][3] = {{{0x95, 0x96, 0}, {0xb5, 0xb6, 0}}, {{0x97, 0x98, 0}, {0xb7, 0xb8, 0}}};
+  if (swap) {
+    snprintf(mode_icon, sizeof(mode_icon), "%s\n%s", logo[1][0], logo[1][1]);
   } else {
-    snprintf(bootmagic_state_str, sizeof(bootmagic_state_str), "Mode: macOS");
+    snprintf(mode_icon, sizeof(mode_icon), "%s\n%s", logo[0][0], logo[0][1]);
   }
 
-  return bootmagic_state_str;
+  return mode_icon;
 }

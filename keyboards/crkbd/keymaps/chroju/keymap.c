@@ -157,10 +157,11 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 #define KC_LVAI  RGB_VAI
 #define KC_LVAD  RGB_VAD
 #define KC_LMOD  RGB_MOD
-#define KC_SWAP  LCG_SWP
-#define KC_NRML  LCG_NRM
+#define KC_SWAP  RCG_SWP
+#define KC_NRML  RCG_NRM
 #define KC_CAD   LCTL(LALT(KC_DEL))
-#define KC_EMJI  LGUI(LCTL(KC_SPACE))
+#define KC_EMJIM  LGUI(LCTL(KC_SPACE))
+#define KC_EMJIW  LGUI(KC_DOT)
 #define KC_SFTESC LSFT_T(KC_ESC)
 #define KC_RASLNG TD(TD_LANG)
 #define KC_ENTSFT LSFT_T(KC_ENTER)
@@ -173,11 +174,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------.                ,-----------------------------------------.
         TAB,     Q,     W,     E,     R,     T,                      Y,     U,     I,     O,     P,  BSLS,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       LCTL,     A,     S,     D,     F,     G,                      H,     J,     K,     L,  SCLN,  QUOT,\
+       LGUI,     A,     S,     D,     F,     G,                      H,     J,     K,     L,  SCLN,  QUOT,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-     SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  EMJI,\
+     SFTESC,     Z,     X,     C,     V,     B,                      N,     M,  COMM,   DOT,  SLSH,  RCTL,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
-                                   LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
+                                   RGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
   ),
 
@@ -197,9 +198,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------.                ,-----------------------------------------.
        EXLM,     1,     2,     3,     4,     5,                      6,     7,     8,     9,     0, XXXXX,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-       TILD,    AT,  HASH,   DLR,  PERC, LCBRS,                  RCBRS,  MINS,   EQL,  ASTR, XXXXX, XXXXX,\
+       TILD,    AT,  HASH,   DLR,  PERC, LCBRS,                  RCBRS,  MINS,   EQL,  ASTR, XXXXX, EMJIW,\
   //|------+------+------+------+------+------|                |------+------+------+------+------+------|
-        GRV, XXXXX, XXXXX,  CIRC,  AMPR,  LCBR,                   RCBR,  UNDS,  PLUS, XXXXX, XXXXX, XXXXX,\
+        GRV, XXXXX, XXXXX,  CIRC,  AMPR,  LCBR,                   RCBR,  UNDS,  PLUS, XXXXX, XXXXX, EMJIM,\
   //|------+------+------+------+------+------+------|  |------+------+------+------+------+------+------|
                                    LGUI, LOWER,SPCALT,   ENTSFT,RASLNG,  BSPC \
                               //`--------------------'  `--------------------'
@@ -248,7 +249,7 @@ void matrix_scan_user(void) {
 
 void matrix_render_user(struct CharacterMatrix *matrix) {
   if (is_master) {
-    matrix_write_ln(matrix, read_bootmagic_state(keymap_config.swap_lctl_lgui));
+    matrix_write_ln(matrix, read_bootmagic_state(keymap_config.swap_rctl_rgui));
     matrix_write_ln(matrix, read_layer_state());
     matrix_write(matrix, read_uptime());
   } else {

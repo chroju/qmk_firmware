@@ -18,19 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "oled_driver.h"
 #include OLED_FONT_H
 #include "timer.h"
-#include "print.h"
+#include "nrf_log.h"
 
 #include <string.h>
 
-#if defined(__AVR__)
-#    include <avr/io.h>
-#    include <avr/pgmspace.h>
-#elif defined(ESP8266)
-#    include <pgmspace.h>
-#else  // defined(ESP8266)
-#    define PROGMEM
-#    define memcpy_P(des, src, len) memcpy(des, src, len)
-#endif  // defined(__AVR__)
+#include "progmem.h"
 
 // Used commands from spec sheet: https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
 // for SH1106: https://www.velleman.eu/downloads/29/infosheets/sh1106_datasheet.pdf
@@ -92,12 +84,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if defined(__AVR__)
 // already defined on ARM
 #    define I2C_TIMEOUT 100
-#    define I2C_TRANSMIT_P(data) i2c_transmit_P((OLED_DISPLAY_ADDRESS << 1), &data[0], sizeof(data), I2C_TIMEOUT)
+#    define I2C_TRANSMIT_P(data) i2c_transmit_P(OLED_DISPLAY_ADDRESS, data, sizeof(data), I2C_TIMEOUT)
 #else  // defined(__AVR__)
-#    define I2C_TRANSMIT_P(data) i2c_transmit((OLED_DISPLAY_ADDRESS << 1), &data[0], sizeof(data), I2C_TIMEOUT)
+#    define I2C_TRANSMIT_P(data) i2c_transmit(OLED_DISPLAY_ADDRESS, data, sizeof(data), I2C_TIMEOUT)
 #endif  // defined(__AVR__)
-#define I2C_TRANSMIT(data) i2c_transmit((OLED_DISPLAY_ADDRESS << 1), &data[0], sizeof(data), I2C_TIMEOUT)
-#define I2C_WRITE_REG(mode, data, size) i2c_writeReg((OLED_DISPLAY_ADDRESS << 1), mode, data, size, I2C_TIMEOUT)
+#define I2C_TRANSMIT(data) i2c_transmit(OLED_DISPLAY_ADDRESS, &data[0], sizeof(data), I2C_TIMEOUT)
+#define I2C_WRITE_REG(mode, data, size) i2c_writeReg(OLED_DISPLAY_ADDRESS, mode, data, size, I2C_TIMEOUT)
 
 #define HAS_FLAGS(bits, flags) ((bits & flags) == flags)
 
@@ -113,6 +105,9 @@ bool            oled_active         = false;
 bool            oled_scrolling      = false;
 uint8_t         oled_rotation       = 0;
 uint8_t         oled_rotation_width = 0;
+uint8_t         oled_scroll_speed   = 0;  // this holds the speed after being remapped to ssd1306 internal values
+uint8_t         oled_scroll_start   = 0;
+uint8_t         oled_scroll_end     = 7;
 #if OLED_TIMEOUT > 0
 uint32_t oled_timeout;
 #endif
@@ -157,7 +152,7 @@ bool oled_init(uint8_t rotation) {
     }
     i2c_init();
 
-    static const uint8_t PROGMEM display_setup1[] = {
+    uint8_t display_setup1[] = {
         I2C_CMD,
         DISPLAY_OFF,
         DISPLAY_CLOCK,
@@ -176,27 +171,27 @@ bool oled_init(uint8_t rotation) {
 #endif
     };
     if (I2C_TRANSMIT_P(display_setup1) != I2C_STATUS_SUCCESS) {
-        print("oled_init cmd set 1 failed\n");
+        NRF_LOG_INFO("oled_init cmd set 1 failed\n");
         return false;
     }
 
     if (!HAS_FLAGS(oled_rotation, OLED_ROTATION_180)) {
-        static const uint8_t PROGMEM display_normal[] = {I2C_CMD, SEGMENT_REMAP_INV, COM_SCAN_DEC};
+        static uint8_t display_normal[] = {I2C_CMD, SEGMENT_REMAP_INV, COM_SCAN_DEC};
         if (I2C_TRANSMIT_P(display_normal) != I2C_STATUS_SUCCESS) {
-            print("oled_init cmd normal rotation failed\n");
+            NRF_LOG_INFO("oled_init cmd normal rotation failed\n");
             return false;
         }
     } else {
-        static const uint8_t PROGMEM display_flipped[] = {I2C_CMD, SEGMENT_REMAP, COM_SCAN_INC};
+        static uint8_t display_flipped[] = {I2C_CMD, SEGMENT_REMAP, COM_SCAN_INC};
         if (I2C_TRANSMIT_P(display_flipped) != I2C_STATUS_SUCCESS) {
-            print("display_flipped failed\n");
+            NRF_LOG_INFO("display_flipped failed\n");
             return false;
         }
     }
 
-    static const uint8_t PROGMEM display_setup2[] = {I2C_CMD, COM_PINS, OLED_COM_PINS, CONTRAST, 0x8F, PRE_CHARGE_PERIOD, 0xF1, VCOM_DETECT, 0x40, DISPLAY_ALL_ON_RESUME, NORMAL_DISPLAY, DEACTIVATE_SCROLL, DISPLAY_ON};
+    static uint8_t display_setup2[] = {I2C_CMD, COM_PINS, OLED_COM_PINS, CONTRAST, 0x8F, PRE_CHARGE_PERIOD, 0xF1, VCOM_DETECT, 0x40, DISPLAY_ALL_ON_RESUME, NORMAL_DISPLAY, DEACTIVATE_SCROLL, DISPLAY_ON};
     if (I2C_TRANSMIT_P(display_setup2) != I2C_STATUS_SUCCESS) {
-        print("display_setup2 failed\n");
+        NRF_LOG_INFO("display_setup2 failed\n");
         return false;
     }
 
@@ -289,14 +284,14 @@ void oled_render(void) {
 
     // Send column & page position
     if (I2C_TRANSMIT(display_start) != I2C_STATUS_SUCCESS) {
-        print("oled_render offset command failed\n");
+        NRF_LOG_INFO("oled_render offset command failed\n");
         return;
     }
 
     if (!HAS_FLAGS(oled_rotation, OLED_ROTATION_90)) {
         // Send render data chunk as is
         if (I2C_WRITE_REG(I2C_DATA, &oled_buffer[OLED_BLOCK_SIZE * update_start], OLED_BLOCK_SIZE) != I2C_STATUS_SUCCESS) {
-            print("oled_render data failed\n");
+            NRF_LOG_INFO("oled_render data failed\n");
             return;
         }
     } else {
@@ -312,7 +307,7 @@ void oled_render(void) {
 
         // Send render data chunk after rotating
         if (I2C_WRITE_REG(I2C_DATA, &temp_buffer[0], OLED_BLOCK_SIZE) != I2C_STATUS_SUCCESS) {
-            print("oled_render90 data failed\n");
+            NRF_LOG_INFO("oled_render90 data failed\n");
             return;
         }
     }
@@ -392,13 +387,15 @@ void oled_write_char(const char data, bool invert) {
     static uint8_t oled_temp_buffer[OLED_FONT_WIDTH];
     memcpy(&oled_temp_buffer, oled_cursor, OLED_FONT_WIDTH);
 
+    _Static_assert(sizeof(font) >= ((OLED_FONT_END + 1 - OLED_FONT_START) * OLED_FONT_WIDTH), "OLED_FONT_END references outside array");
+
     // set the reder buffer data
     uint8_t cast_data = (uint8_t)data;  // font based on unsigned type for index
     if (cast_data < OLED_FONT_START || cast_data > OLED_FONT_END) {
         memset(oled_cursor, 0x00, OLED_FONT_WIDTH);
     } else {
         const uint8_t *glyph = &font[(cast_data - OLED_FONT_START) * OLED_FONT_WIDTH];
-        memcpy_P(oled_cursor, glyph, OLED_FONT_WIDTH);
+        memcpy(oled_cursor, glyph, OLED_FONT_WIDTH);
     }
 
     // Invert if needed
@@ -431,6 +428,31 @@ void oled_write_ln(const char *data, bool invert) {
     oled_advance_page(true);
 }
 
+void oled_pan(bool left) {
+    uint16_t i = 0;
+    for (uint16_t y = 0; y < OLED_DISPLAY_HEIGHT / 8; y++) {
+        if (left) {
+            for (uint16_t x = 0; x < OLED_DISPLAY_WIDTH - 1; x++) {
+                i              = y * OLED_DISPLAY_WIDTH + x;
+                oled_buffer[i] = oled_buffer[i + 1];
+            }
+        } else {
+            for (uint16_t x = OLED_DISPLAY_WIDTH - 1; x > 0; x--) {
+                i              = y * OLED_DISPLAY_WIDTH + x;
+                oled_buffer[i] = oled_buffer[i - 1];
+            }
+        }
+    }
+    oled_dirty = ~((OLED_BLOCK_TYPE)0);
+}
+
+void oled_write_raw_byte(const char data, uint16_t index) {
+    if (index > OLED_MATRIX_SIZE) index = OLED_MATRIX_SIZE;
+    if (oled_buffer[index] == data) return;
+    oled_buffer[index] = data;
+    oled_dirty |= (1 << (index / OLED_BLOCK_SIZE));
+}
+
 void oled_write_raw(const char *data, uint16_t size) {
     if (size > OLED_MATRIX_SIZE) size = OLED_MATRIX_SIZE;
     for (uint16_t i = 0; i < size; i++) {
@@ -457,7 +479,7 @@ void oled_write_ln_P(const char *data, bool invert) {
 void oled_write_raw_P(const char *data, uint16_t size) {
     if (size > OLED_MATRIX_SIZE) size = OLED_MATRIX_SIZE;
     for (uint16_t i = 0; i < size; i++) {
-        uint8_t c = pgm_read_byte(++data);
+        uint8_t c = pgm_read_byte(data++);
         if (oled_buffer[i] == c) continue;
         oled_buffer[i] = c;
         oled_dirty |= (1 << (i / OLED_BLOCK_SIZE));
@@ -470,10 +492,10 @@ bool oled_on(void) {
     oled_timeout = timer_read32() + OLED_TIMEOUT;
 #endif
 
-    static const uint8_t PROGMEM display_on[] = {I2C_CMD, DISPLAY_ON};
+    uint8_t display_on[] = {I2C_CMD, DISPLAY_ON};
     if (!oled_active) {
         if (I2C_TRANSMIT_P(display_on) != I2C_STATUS_SUCCESS) {
-            print("oled_on cmd failed\n");
+            NRF_LOG_INFO("oled_on cmd failed\n");
             return oled_active;
         }
         oled_active = true;
@@ -482,10 +504,10 @@ bool oled_on(void) {
 }
 
 bool oled_off(void) {
-    static const uint8_t PROGMEM display_off[] = {I2C_CMD, DISPLAY_OFF};
+    uint8_t display_off[] = {I2C_CMD, DISPLAY_OFF};
     if (oled_active) {
         if (I2C_TRANSMIT_P(display_off) != I2C_STATUS_SUCCESS) {
-            print("oled_off cmd failed\n");
+            NRF_LOG_INFO("oled_off cmd failed\n");
             return oled_active;
         }
         oled_active = false;
@@ -493,13 +515,38 @@ bool oled_off(void) {
     return !oled_active;
 }
 
+// Set the specific 8 lines rows of the screen to scroll.
+// 0 is the default for start, and 7 for end, which is the entire
+// height of the screen.  For 128x32 screens, rows 4-7 are not used.
+void oled_scroll_set_area(uint8_t start_line, uint8_t end_line) {
+    oled_scroll_start = start_line;
+    oled_scroll_end   = end_line;
+}
+
+void oled_scroll_set_speed(uint8_t speed) {
+    // Sets the speed for scrolling... does not take effect
+    // until scrolling is either started or restarted
+    // the ssd1306 supports 8 speeds
+    // FrameRate2   speed = 7
+    // FrameRate3   speed = 4
+    // FrameRate4   speed = 5
+    // FrameRate5   speed = 0
+    // FrameRate25  speed = 6
+    // FrameRate64  speed = 1
+    // FrameRate128 speed = 2
+    // FrameRate256 speed = 3
+    // for ease of use these are remaped here to be in order
+    static uint8_t scroll_remap[8] = {7, 4, 5, 0, 6, 1, 2, 3};
+    oled_scroll_speed                    = scroll_remap[speed];
+}
+
 bool oled_scroll_right(void) {
     // Dont enable scrolling if we need to update the display
     // This prevents scrolling of bad data from starting the scroll too early after init
     if (!oled_dirty && !oled_scrolling) {
-        static const uint8_t PROGMEM display_scroll_right[] = {I2C_CMD, SCROLL_RIGHT, 0x00, 0x00, 0x00, 0x0F, 0x00, 0xFF, ACTIVATE_SCROLL};
-        if (I2C_TRANSMIT_P(display_scroll_right) != I2C_STATUS_SUCCESS) {
-            print("oled_scroll_right cmd failed\n");
+        uint8_t display_scroll_right[] = {I2C_CMD, SCROLL_RIGHT, 0x00, oled_scroll_start, oled_scroll_speed, oled_scroll_end, 0x00, 0xFF, ACTIVATE_SCROLL};
+        if (I2C_TRANSMIT(display_scroll_right) != I2C_STATUS_SUCCESS) {
+            NRF_LOG_INFO("oled_scroll_right cmd failed\n");
             return oled_scrolling;
         }
         oled_scrolling = true;
@@ -511,9 +558,9 @@ bool oled_scroll_left(void) {
     // Dont enable scrolling if we need to update the display
     // This prevents scrolling of bad data from starting the scroll too early after init
     if (!oled_dirty && !oled_scrolling) {
-        static const uint8_t PROGMEM display_scroll_left[] = {I2C_CMD, SCROLL_LEFT, 0x00, 0x00, 0x00, 0x0F, 0x00, 0xFF, ACTIVATE_SCROLL};
-        if (I2C_TRANSMIT_P(display_scroll_left) != I2C_STATUS_SUCCESS) {
-            print("oled_scroll_left cmd failed\n");
+        uint8_t display_scroll_left[] = {I2C_CMD, SCROLL_LEFT, 0x00, oled_scroll_start, oled_scroll_speed, oled_scroll_end, 0x00, 0xFF, ACTIVATE_SCROLL};
+        if (I2C_TRANSMIT(display_scroll_left) != I2C_STATUS_SUCCESS) {
+            NRF_LOG_INFO("oled_scroll_left cmd failed\n");
             return oled_scrolling;
         }
         oled_scrolling = true;
@@ -523,9 +570,9 @@ bool oled_scroll_left(void) {
 
 bool oled_scroll_off(void) {
     if (oled_scrolling) {
-        static const uint8_t PROGMEM display_scroll_off[] = {I2C_CMD, DEACTIVATE_SCROLL};
+        uint8_t display_scroll_off[] = {I2C_CMD, DEACTIVATE_SCROLL};
         if (I2C_TRANSMIT_P(display_scroll_off) != I2C_STATUS_SUCCESS) {
-            print("oled_scroll_off cmd failed\n");
+            NRF_LOG_INFO("oled_scroll_off cmd failed\n");
             return oled_scrolling;
         }
         oled_scrolling = false;
@@ -569,7 +616,7 @@ void oled_task(void) {
 
     // Display timeout check
 #if OLED_TIMEOUT > 0
-    if (oled_active && timer_expired32(timer_read32(), oled_timeout)) {
+    if (oled_active && timer_read32() > oled_timeout) {
         oled_off();
     }
 #endif
@@ -586,3 +633,9 @@ void oled_task(void) {
 }
 
 __attribute__((weak)) void oled_task_user(void) {}
+
+uint8_t oled_set_contrast(uint8_t contrast) {
+    uint8_t buf[2] = {CONTRAST, 0};
+    buf[1] = contrast;
+    return I2C_WRITE_REG(I2C_CMD, buf, 2);
+}
